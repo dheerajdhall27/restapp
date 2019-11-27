@@ -1,5 +1,6 @@
 package com.basic.api.restapp.domain;
 
+import com.basic.api.restapp.util.Global;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.HashMap;
@@ -15,7 +16,7 @@ public class ObjectModel {
 
   @Id
   @GeneratedValue
-  private Long id;
+  private Long uid;
 
   @ElementCollection
   private Map<String, String> map;
@@ -23,18 +24,19 @@ public class ObjectModel {
   @JsonIgnore
   private String url;
 
+
   public ObjectModel() {
 
   }
 
-  public ObjectModel(Long id) {
-    this.id = id;
+  public ObjectModel(Long uid) {
+    this.uid = uid;
     setUrl();
     map = new HashMap<>();
   }
 
-  public Long getId() {
-    return id;
+  public Long getUid() {
+    return uid;
   }
 
   @JsonAnyGetter
@@ -42,8 +44,8 @@ public class ObjectModel {
     return map;
   }
 
-  public void setId(Long id) {
-    this.id = id;
+  public void setUid(Long uid) {
+    this.uid = uid;
   }
 
   public void setMap(Map<String, String> map) {
@@ -55,6 +57,6 @@ public class ObjectModel {
   }
 
   private void setUrl() {
-    this.url = "https://myrestapp.cisco.com/api/objects/" + id;
+    this.url = Global.URL + uid;
   }
 }

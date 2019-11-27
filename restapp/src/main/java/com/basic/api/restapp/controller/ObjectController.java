@@ -10,10 +10,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import org.springframework.beans.TypeMismatchException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,7 +32,7 @@ public class ObjectController {
 
   private AtomicLong nextId = new AtomicLong();
 
-  @GetMapping("/api/objects")
+  @GetMapping(value = "/api/objects")
   public ResponseEntity<List<Map<String, String>>> getAllData() {
     Iterable<ObjectModel> iterable = objectService.lookup();
 
@@ -44,14 +46,15 @@ public class ObjectController {
     return new ResponseEntity<>(list, HttpStatus.OK);
   }
 
-  @GetMapping("/api/objects/{id}")
-  public ResponseEntity<ObjectModel> getObject(@PathVariable(value = "id") Long id) {
+  @GetMapping(value = "/api/objects/{id}")
+  public ResponseEntity<ObjectModel> getObject(@PathVariable(value = "id") Long id)
+      throws TypeMismatchException {
     ObjectModel objectModel = objectService.findById(id);
 
     return new ResponseEntity<>(objectModel, HttpStatus.FOUND);
   }
 
-  @PostMapping("/api/objects")
+  @PostMapping(value = "/api/objects")
   public ResponseEntity<ObjectModel> createData(@RequestBody JsonNode jsonNode)
       throws HttpMessageNotReadableException {
     Map<String, String> map = new HashMap<>();
@@ -61,37 +64,39 @@ public class ObjectController {
     while (fieldNamesIterator.hasNext()) {
       String fieldName = fieldNamesIterator.next();
 
-      map.put(fieldName, jsonNode.get(fieldName).textValue());
+      if (!map.containsKey(fieldName)) {
+        map.put(fieldName, jsonNode.get(fieldName).textValue());
+      }
     }
 
     ObjectModel objectModel = new ObjectModel(nextId.incrementAndGet());
     objectModel.setMap(map);
 
-    objectModel = objectService.createObject(objectModel.getId(), objectModel.getMap());
+    objectModel = objectService.createObject(objectModel.getUid(), objectModel.getMap());
 
     return new ResponseEntity<>(objectModel, HttpStatus.CREATED);
   }
 
 
-  @PutMapping("/api/objects/{id}")
+  @PutMapping(value = "/api/objects/{id}")
   public ResponseEntity<ObjectModel> updateData(@PathVariable(value = "id") Long id,
-      @RequestBody JsonNode jsonNode) {
+      @RequestBody JsonNode jsonNode)
+      throws HttpMessageNotReadableException, TypeMismatchException {
+    System.out.print("Hello There: " + id);
     ObjectModel objectModel = objectService.findById(id);
-
-    if (objectModel == null) {
-      // TODO : ADD CUSTOM EXCEPTION
-      return null;
-    }
 
     Iterator<String> fieldNamesIterator = jsonNode.fieldNames();
     Map<String, String> map = new HashMap<>();
 
     while (fieldNamesIterator.hasNext()) {
       String fieldName = fieldNamesIterator.next();
-      map.put(fieldName, jsonNode.get(fieldName).textValue());
+
+      if (!map.containsKey(fieldName)) {
+        map.put(fieldName, jsonNode.get(fieldName).textValue());
+      }
     }
 
-    objectModel.setId(id);
+    objectModel.setUid(id);
     objectModel.setMap(map);
 
     objectService.save(objectModel);

@@ -1,6 +1,5 @@
 package com.basic.api.restapp.exception;
 
-import org.springframework.http.HttpStatus;
 
 public class ExceptionResponse {
 
